@@ -19,23 +19,21 @@ EXCLUDED_SIGNALS = {"suspicious_span", "empty_grid"}
 def get_eligible_flagged_cells(
     prediction: Dict[str, Any], risk_data: Dict[str, Any]
 ) -> Tuple[List[Dict[str, Any]], Dict[str, List[str]], bool]:
-    """Extract flagged cells excluding suspicious_span and empty_grid.
+    """Extract flagged cells, excluding suspicious_span and empty_grid flags.
 
     Returns:
         flagged_cells: List of cell dicts from prediction
         cell_signals: Mapping from cell_id to list of risk signals that flagged it
-        excluded_only: True if table was flagged ONLY by excluded signals (or had no cells)
+        has_excluded_flags: True if table contains suspicious_span or empty_grid flags
     """
-    cell_signals: Dict[str, List[str]] = {}
-    has_excluded_signals = False
-    has_eligible_signals = False
+    signals_present = {f.get("signal", "") for f in risk_data.get("reasons", [])}
+    has_excluded_flags = bool(signals_present & EXCLUDED_SIGNALS)
 
+    cell_signals: Dict[str, List[str]] = {}
     for f in risk_data.get("reasons", []):
         sig = f.get("signal", "")
         if sig in EXCLUDED_SIGNALS:
-            has_excluded_signals = True
             continue
-        has_eligible_signals = True
         for cid in f.get("cells", []):
             if cid:
                 cell_signals.setdefault(cid, []).append(sig)
@@ -46,8 +44,7 @@ def get_eligible_flagged_cells(
         if cid in cells_by_id:
             flagged.append(cells_by_id[cid])
 
-    excluded_only = has_excluded_signals and not has_eligible_signals
-    return flagged, cell_signals, excluded_only
+    return flagged, cell_signals, has_excluded_flags
 
 
 def draw_flagged_cells(

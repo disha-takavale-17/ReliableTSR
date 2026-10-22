@@ -23,11 +23,11 @@ def test_get_eligible_flagged_cells():
             {"signal": "suspicious_span", "cells": []},
         ]
     }
-    flagged, signals, excluded_only = get_eligible_flagged_cells(prediction, risk_data)
+    flagged, signals, has_excluded_flags = get_eligible_flagged_cells(prediction, risk_data)
     assert len(flagged) == 2
     assert [c["id"] for c in flagged] == ["c0", "c1"]
     assert signals["c0"] == ["cell_overlap"]
-    assert not excluded_only
+    assert has_excluded_flags is True
 
 
 def test_draw_flagged_cells():
